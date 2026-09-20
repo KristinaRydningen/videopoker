@@ -1,6 +1,7 @@
-import { usePlayerStore } from "../store/store";
+import { usePlayerStore } from "../../store/store";
 
 export default function NewPlayerForm() {
+  const selectPlayer = usePlayerStore((state) => state.selectPlayer);
   const allPlayers = usePlayerStore((state) => state.allPlayers);
   const addPlayer = usePlayerStore((state) => state.addPlayer);
 
@@ -21,7 +22,7 @@ export default function NewPlayerForm() {
       {allPlayers.map((player) => (
         <li key={player.id}>
           {player.name}, {player.coins} coins
-          <button>Velg spiller</button>
+          <button onClick={() => selectPlayer(player)}>Velg spiller</button>
         </li>
       ))}
     </>

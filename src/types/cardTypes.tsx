@@ -35,5 +35,5 @@ export type PokerHand =
   | "straight"
   | "threeOfAKind"
   | "twoPair"
-  | "pair"
-  | "highCard";
+  | "jacksOrBetter"
+  | "noWin";

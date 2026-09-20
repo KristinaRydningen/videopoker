@@ -1,0 +1,11 @@
+.playerHand {
+  display: grid;
+  grid-template-columns: 10rem 10rem 10rem 10rem 10rem;
+  gap: 5rem;
+}
+
+.playerHand div {
+  height: 10rem;
+  border: black solid 0.1rem;
+  text-align: center;
+}

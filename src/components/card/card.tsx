@@ -1,12 +1,13 @@
-//TODO: Lage en funksjon som velger ut random kort * 4
-//TODO: Designe kort med grid.
-
-import { useState } from "react";
 import styles from "./card.module.css";
 
-import type { cardRanks, cardSuits, PlayingCard } from "../../types/cardTypes";
+import type {
+  cardRanks,
+  cardSuits,
+  PlayingCard,
+  PokerHand,
+} from "../../types/cardTypes";
+import type React from "react";
 
-//TODO: Lage et array med alle 52 kort.
 const suits: cardSuits[] = ["hearts", "diamonds", "clubs", "spades"];
 
 const ranks: cardRanks[] = [
@@ -25,7 +26,7 @@ const ranks: cardRanks[] = [
   "A",
 ];
 
-//Lager en kortstokk
+// Lager en kortstokk
 export function MakeDeck(): PlayingCard[] {
   return suits.flatMap((suit) =>
     ranks.map((rank) => ({
@@ -35,7 +36,7 @@ export function MakeDeck(): PlayingCard[] {
   );
 }
 
-//Blande kortstokken
+// Blander kortstokken
 export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
   const shuffled = [...deck];
 
@@ -44,40 +45,150 @@ export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
 
     [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
   }
+
   return shuffled;
 }
 
-//Vise frem fem kort av den blandede stokken
-export function ShowFiveCards() {
-  const [cards, setCards] = useState(() => {
-    const deck = MakeDeck();
-    const shuffledDeck = shuffleDeck(deck);
+export function checkPokerHand(cards: PlayingCard[]): PokerHand {
+  const rankCounts: Partial<Record<cardRanks, number>> = {};
 
-    return shuffledDeck.slice(0, 5);
+  cards.forEach((card) => {
+    rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
   });
 
-  return (
-    <div>
-      <h3>Dine kort</h3>
-      <div className={styles.playerHand}>
-        {cards.map((card, index) => (
-          <div key={index}>
-            {card.rank} of {card.suit}
-          </div>
-        ))}
-      </div>
+  const counts = Object.values(rankCounts);
 
-      <button
-        onClick={() => {
-          const deck = MakeDeck();
-          const shuffledDeck = shuffleDeck(deck);
-          setCards(shuffledDeck.slice(0, 5));
-        }}
-      >
-        Trekk kort
-      </button>
+  const isFlush = cards.every((card) => card.suit === cards[0].suit);
+
+  const rankOrder: cardRanks[] = [
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "J",
+    "Q",
+    "K",
+    "A",
+  ];
+
+  const rankValues = cards
+    .map((card) => rankOrder.indexOf(card.rank))
+    .sort((a, b) => a - b);
+
+  const isStraight = rankValues.every((value, index) => {
+    if (index === 0) {
+      return true;
+    }
+
+    return value === rankValues[index - 1] + 1;
+  });
+
+  const royalRanks: cardRanks[] = ["10", "J", "Q", "K", "A"];
+
+  const isRoyalFlush =
+    isFlush &&
+    royalRanks.every((rank) => cards.some((card) => card.rank === rank));
+
+  if (isRoyalFlush) {
+    return "royalFlush";
+  }
+
+  if (isStraight && isFlush) {
+    return "straightFlush";
+  }
+
+  if (counts.includes(4)) {
+    return "fourOfAKind";
+  }
+
+  if (counts.includes(3) && counts.includes(2)) {
+    return "fullHouse";
+  }
+
+  if (isFlush) {
+    return "flush";
+  }
+
+  if (isStraight) {
+    return "straight";
+  }
+
+  if (counts.includes(3)) {
+    return "threeOfAKind";
+  }
+
+  const pairs = counts.filter((count) => count === 2);
+
+  if (pairs.length === 2) {
+    return "twoPair";
+  }
+
+  const winningRanks: cardRanks[] = ["J", "Q", "K", "A"];
+
+  const hasJacksOrBetter = winningRanks.some((rank) => rankCounts[rank] === 2);
+
+  if (hasJacksOrBetter) {
+    return "jacksOrBetter";
+  }
+
+  return "noWin";
+}
+
+// Props til ett Card
+type CardProps = {
+  card: PlayingCard;
+  isHeld: boolean;
+  onHold: () => void;
+};
+
+// Ett enkelt spillekort
+export function Card({ card, isHeld, onHold }: CardProps) {
+  return (
+    <div onClick={onHold}>
+      <p>
+        {card.rank} of {card.suit}
+      </p>
+
+      {isHeld && <p>HOLD</p>}
     </div>
   );
 }
 
-//TODO: funksjoner for hver vinnermulighet (straight osv) som sender inn kortene på hånden som parameter
+// Props til ShowFiveCards
+type ShowFiveCardsProps = {
+  cards: PlayingCard[];
+  heldCards: number[];
+  setHeldCards: React.Dispatch<React.SetStateAction<number[]>>;
+};
+
+// Viser kortene den mottar fra Game
+export function ShowFiveCards({
+  cards,
+  heldCards,
+  setHeldCards,
+}: ShowFiveCardsProps) {
+  function toggleHold(index: number) {
+    if (heldCards.includes(index)) {
+      setHeldCards(heldCards.filter((heldIndex) => heldIndex !== index));
+    } else {
+      setHeldCards([...heldCards, index]);
+    }
+  }
+  return (
+    <div className={styles.playerHand}>
+      {cards.map((card, index) => (
+        <Card
+          key={index}
+          card={card}
+          isHeld={heldCards.includes(index)}
+          onHold={() => toggleHold(index)}
+        />
+      ))}
+    </div>
+  );
+}

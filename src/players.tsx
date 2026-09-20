@@ -1,5 +1,5 @@
 import Header from "./components/header/header";
-import NewPlayerForm from "./components/playerform";
+import NewPlayerForm from "./components/player/playerform";
 
 export function Players() {
   return (

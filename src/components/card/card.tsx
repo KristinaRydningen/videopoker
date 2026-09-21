@@ -6,7 +6,6 @@ import type {
   PlayingCard,
   PokerHand,
 } from "../../types/cardTypes";
-import type React from "react";
 
 const suits: cardSuits[] = ["hearts", "diamonds", "clubs", "spades"];
 
@@ -26,7 +25,7 @@ const ranks: cardRanks[] = [
   "A",
 ];
 
-// Lager en kortstokk
+// Lager en gir en komplett kortstokk (52 PlayingCard objecter)
 export function MakeDeck(): PlayingCard[] {
   return suits.flatMap((suit) =>
     ranks.map((rank) => ({
@@ -36,7 +35,7 @@ export function MakeDeck(): PlayingCard[] {
   );
 }
 
-// Blander kortstokken
+// Tar imot en kortstokk, blander en kopi av den og returnerer den blandede kortstokken.
 export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
   const shuffled = [...deck];
 
@@ -49,7 +48,11 @@ export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
   return shuffled;
 }
 
+// Tar imot fem spillekort, undersøker kombinasjonen og returnerer hvilken PokerHand spilleren har.
 export function checkPokerHand(cards: PlayingCard[]): PokerHand {
+  if (cards.length !== 5) {
+    return "noWin";
+  }
   const rankCounts: Partial<Record<cardRanks, number>> = {};
 
   cards.forEach((card) => {
@@ -88,6 +91,13 @@ export function checkPokerHand(cards: PlayingCard[]): PokerHand {
     return value === rankValues[index - 1] + 1;
   });
 
+  const isLowAceStraight =
+    rankValues[0] === 0 &&
+    rankValues[1] === 1 &&
+    rankValues[2] === 2 &&
+    rankValues[3] === 3 &&
+    rankValues[4] === 12;
+
   const royalRanks: cardRanks[] = ["10", "J", "Q", "K", "A"];
 
   const isRoyalFlush =
@@ -98,7 +108,7 @@ export function checkPokerHand(cards: PlayingCard[]): PokerHand {
     return "royalFlush";
   }
 
-  if (isStraight && isFlush) {
+  if ((isStraight || isLowAceStraight) && isFlush) {
     return "straightFlush";
   }
 
@@ -114,7 +124,7 @@ export function checkPokerHand(cards: PlayingCard[]): PokerHand {
     return "flush";
   }
 
-  if (isStraight) {
+  if (isStraight || isLowAceStraight) {
     return "straight";
   }
 
@@ -139,23 +149,101 @@ export function checkPokerHand(cards: PlayingCard[]): PokerHand {
   return "noWin";
 }
 
+// Tar imot en PokerHand, returnerer tallet som innsatsen skal ganges med ved utbetaling.
+export function getPayoutMultiplier(pokerHand: PokerHand): number {
+  if (pokerHand === "royalFlush") {
+    return 250;
+  }
+
+  if (pokerHand === "straightFlush") {
+    return 50;
+  }
+
+  if (pokerHand === "fourOfAKind") {
+    return 25;
+  }
+
+  if (pokerHand === "fullHouse") {
+    return 9;
+  }
+
+  if (pokerHand === "flush") {
+    return 6;
+  }
+
+  if (pokerHand === "straight") {
+    return 4;
+  }
+
+  if (pokerHand === "threeOfAKind") {
+    return 3;
+  }
+
+  if (pokerHand === "twoPair") {
+    return 2;
+  }
+
+  if (pokerHand === "jacksOrBetter") {
+    return 1;
+  }
+
+  return 0;
+}
+
 // Props til ett Card
 type CardProps = {
-  card: PlayingCard;
-  isHeld: boolean;
-  onHold: () => void;
+  card?: PlayingCard;
+  isHeld?: boolean;
+  onHold?: () => void;
+  showBack?: boolean;
 };
 
-// Ett enkelt spillekort
-export function Card({ card, isHeld, onHold }: CardProps) {
+// Tar imot kortets suit og gir kortsymbol
+function getSuitSymbol(suit: cardSuits) {
+  if (suit === "hearts") {
+    return "♥";
+  }
+
+  if (suit === "diamonds") {
+    return "♦";
+  }
+
+  if (suit === "clubs") {
+    return "♣";
+  }
+
+  return "♠";
+}
+
+//Viser ett kort, kan vise fremside eller bakside
+export function Card({
+  card,
+  isHeld = false,
+  onHold,
+  showBack = false,
+}: CardProps) {
+  if (showBack) {
+    return <div className={styles.cardBack}></div>;
+  }
+
+  if (!card) {
+    return null;
+  }
+
   return (
-    <div onClick={onHold}>
+    <button
+      type="button"
+      className={styles.card}
+      onClick={onHold}
+      aria-pressed={isHeld}
+      aria-label={`${card.rank} ${card.suit}${isHeld ? ", holdt" : ""}`}
+    >
       <p>
-        {card.rank} of {card.suit}
+        {card.rank} {getSuitSymbol(card.suit)}
       </p>
 
       {isHeld && <p>HOLD</p>}
-    </div>
+    </button>
   );
 }
 
@@ -163,21 +251,31 @@ export function Card({ card, isHeld, onHold }: CardProps) {
 type ShowFiveCardsProps = {
   cards: PlayingCard[];
   heldCards: number[];
-  setHeldCards: React.Dispatch<React.SetStateAction<number[]>>;
+  setHeldCards: (heldCards: number[]) => void;
 };
 
-// Viser kortene den mottar fra Game
+//Viser fem kort og sender Hold-valg videre
 export function ShowFiveCards({
   cards,
   heldCards,
   setHeldCards,
 }: ShowFiveCardsProps) {
+  // Tar imot kortets indeks og legger det til eller fjerner det fra listen over kort som skal holdes.
   function toggleHold(index: number) {
     if (heldCards.includes(index)) {
       setHeldCards(heldCards.filter((heldIndex) => heldIndex !== index));
     } else {
       setHeldCards([...heldCards, index]);
     }
+  }
+  if (cards.length === 0) {
+    return (
+      <div className={styles.playerHand}>
+        {[0, 1, 2, 3, 4].map((index) => (
+          <Card key={index} showBack />
+        ))}
+      </div>
+    );
   }
   return (
     <div className={styles.playerHand}>

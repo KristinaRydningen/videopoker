@@ -35,7 +35,7 @@ export function MakeDeck(): PlayingCard[] {
   );
 }
 
-// Tar imot en kortstokk, blander en kopi av den og returnerer den blandede kortstokken.
+// Tar imot en kortstokk, blander en kopi av den og returnerer den blandede kortstokken (Fisher Yates!)
 export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
   const shuffled = [...deck];
 

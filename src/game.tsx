@@ -9,7 +9,6 @@ import {
 import { usePlayerStore } from "./store/store";
 import TotalCoins from "./components/TotalCoins";
 import CurrentBet from "./components/currentBet";
-
 export default function Game() {
   const currentPlayer = usePlayerStore((state) => state.currentPlayer);
   const currentBet = usePlayerStore((state) => state.currentBet);

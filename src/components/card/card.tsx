@@ -25,7 +25,9 @@ const ranks: cardRanks[] = [
   "A",
 ];
 
-// Lager en gir en komplett kortstokk (52 PlayingCard objecter)
+// Lager en komplett kortstokk med alle kombinasjoner av suits og ranks.
+// Tar ikke imot noen argumenter.
+// Returnerer et PlayingCard-array med 52 kort.
 export function MakeDeck(): PlayingCard[] {
   return suits.flatMap((suit) =>
     ranks.map((rank) => ({
@@ -35,7 +37,9 @@ export function MakeDeck(): PlayingCard[] {
   );
 }
 
-// Tar imot en kortstokk, blander en kopi av den og returnerer den blandede kortstokken (Fisher Yates!)
+// Tar imot en kortstokk som PlayingCard[].
+// Lager en kopi av kortstokken og blander den med Fisher-Yates-algoritmen.
+// Returnerer den blandede kortstokken som PlayingCard[].
 export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
   const shuffled = [...deck];
 
@@ -48,11 +52,13 @@ export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
   return shuffled;
 }
 
-// Tar imot fem spillekort, undersøker kombinasjonen og returnerer hvilken PokerHand spilleren har.
+// Tar imot fem spillekort, undersøker kombinasjonen
+// og returnerer hvilken PokerHand spilleren har.
 export function checkPokerHand(cards: PlayingCard[]): PokerHand {
   if (cards.length !== 5) {
     return "noWin";
   }
+  // Teller hvor mange kort spilleren har av hver rank.
   const rankCounts: Partial<Record<cardRanks, number>> = {};
 
   cards.forEach((card) => {
@@ -91,6 +97,7 @@ export function checkPokerHand(cards: PlayingCard[]): PokerHand {
     return value === rankValues[index - 1] + 1;
   });
 
+  // Sjekker A-2-3-4-5, der ess brukes som det laveste kortet.
   const isLowAceStraight =
     rankValues[0] === 0 &&
     rankValues[1] === 1 &&
@@ -149,7 +156,8 @@ export function checkPokerHand(cards: PlayingCard[]): PokerHand {
   return "noWin";
 }
 
-// Tar imot en PokerHand, returnerer tallet som innsatsen skal ganges med ved utbetaling.
+// Tar imot pokerhånden, returnerer et number
+// som innsatsen skal ganges med ved utbetaling.
 export function getPayoutMultiplier(pokerHand: PokerHand): number {
   if (pokerHand === "royalFlush") {
     return 250;
@@ -198,7 +206,8 @@ type CardProps = {
   showBack?: boolean;
 };
 
-// Tar imot kortets suit og gir kortsymbol
+// Tar imot kortets suit,
+//returnerer symbolet som hører til suiten
 function getSuitSymbol(suit: cardSuits) {
   if (suit === "hearts") {
     return "♥";
@@ -215,7 +224,9 @@ function getSuitSymbol(suit: cardSuits) {
   return "♠";
 }
 
-//Viser ett kort, kan vise fremside eller bakside
+// Tar imot CardProps med kortet og informasjon om hvordan det skal vises.
+// Viser enten forsiden eller baksiden av kortet.
+// Returnerer JSX for kortet, eller null hvis det ikke finnes et kort.
 export function Card({
   card,
   isHeld = false,
@@ -250,17 +261,22 @@ export function Card({
 // Props til ShowFiveCards
 type ShowFiveCardsProps = {
   cards: PlayingCard[];
+  //Et array med numbers som er indexen til kortene som spilleren holder.
   heldCards: number[];
   setHeldCards: (heldCards: number[]) => void;
 };
 
-//Viser fem kort og sender Hold-valg videre
+// Tar imot spillerens kort, hvilke kort som holdes og funksjonen som oppdaterer heldCards.
+// Viser spillerens kort, eller fem kortbaksider hvis en runde ikke er startet.
+// Returnerer JSX med kortene.
 export function ShowFiveCards({
   cards,
   heldCards,
   setHeldCards,
 }: ShowFiveCardsProps) {
-  // Tar imot kortets indeks og legger det til eller fjerner det fra listen over kort som skal holdes.
+  // Tar imot indexen til kortet spilleren velger.
+  // Legger indexen til eller fjerner den fra heldCards.
+  // Returnerer ingen verdi.
   function toggleHold(index: number) {
     if (heldCards.includes(index)) {
       setHeldCards(heldCards.filter((heldIndex) => heldIndex !== index));
@@ -268,6 +284,7 @@ export function ShowFiveCards({
       setHeldCards([...heldCards, index]);
     }
   }
+  //Sjekker om spilleren har kort, hvis den ikke har det så vises det frem fem kortbaksider
   if (cards.length === 0) {
     return (
       <div className={styles.playerHand}>
@@ -277,6 +294,7 @@ export function ShowFiveCards({
       </div>
     );
   }
+  //Hvis spilleren har kort, vis frem fem kort.
   return (
     <div className={styles.playerHand}>
       {cards.map((card, index) => (

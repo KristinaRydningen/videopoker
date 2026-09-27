@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Player, PlayingCard, PokerHand } from "../types/cardTypes";
 
+//Beskriver all state og alle actions som finnes i Zustand-storen
 type PlayerStore = {
   allPlayers: Player[];
   currentPlayer: Player | null;
@@ -42,6 +43,8 @@ export const usePlayerStore = create<PlayerStore>()(
       hasDrawn: false,
       pokerHand: null,
 
+      // Actions som tar imot nye verdier og
+      // oppdaterer tilhørende state i Zustand.
       setCards: (cards) =>
         set({
           cards: cards,
@@ -72,7 +75,9 @@ export const usePlayerStore = create<PlayerStore>()(
           pokerHand: pokerHand,
         }),
 
-      //Tar imot spillerens navn og lager en ny spiller med id og 100 coins
+      //Tar imot spillerens navn som string og lager en ny spiller
+      //med unik id og 100 coins. Oppdaterer allPlayers og returnerer
+      //ingen verdi.
       addPlayer: (name) =>
         set((state) => ({
           allPlayers: [
@@ -85,17 +90,23 @@ export const usePlayerStore = create<PlayerStore>()(
           ],
         })),
 
+      // Tar imot en Player og setter denne spilleren som currentPlayer.
+      // Returnerer ingen verdi.
       selectPlayer: (player) =>
         set({
           currentPlayer: player,
         }),
 
+      // Tar imot innsatsen som number og oppdaterer currentBet.
+      // Returnerer ingen verdi.
       setCurrentBet: (bet) =>
         set({
           currentBet: bet,
         }),
 
-      // Trekker den valgte innsatsen fra currentPlayer og oppdaterer samme spiller i allPlayers
+      // Starter økonomidelen av en ny runde og tar ikke imot argumenter.
+      // Trekker currentBet fra currentPlayer og oppdaterer samme spiller i allPlayers.
+      // Returnerer ingen verdi.
       startRound: () =>
         set((state) => {
           if (
@@ -122,7 +133,9 @@ export const usePlayerStore = create<PlayerStore>()(
           };
         }),
 
-      //Tar imot gevinstbeløpet og legger det til currentPlayer og samme spiller i allPlayers
+      //Tar imot gevinstbeløpet som number
+      // legger det til currentPlayer og oppdaterer samme spiller i allPlayers
+      //returnerer ingen verdi
       addWinnings: (amount) =>
         set((state) => {
           if (!state.currentPlayer) {
@@ -145,6 +158,8 @@ export const usePlayerStore = create<PlayerStore>()(
           };
         }),
     }),
+    // Navnet brukes som nøkkel i localStorage.
+    // Persist lagrer Zustand-state i localStorage slik at den overlever refresh.
     {
       name: "players",
     },
